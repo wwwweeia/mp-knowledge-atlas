@@ -132,6 +132,8 @@ def run_cluster(
 
 
 def main():
+    from dotenv import load_dotenv
+    load_dotenv()
     ap = argparse.ArgumentParser()
     ap.add_argument("--chroma", default=os.environ.get("CHROMA_PATH", "data/chroma"))
     ap.add_argument("--db", default=os.environ.get("DB_PATH", "data/articles.db"))

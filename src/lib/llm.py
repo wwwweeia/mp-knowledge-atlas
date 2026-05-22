@@ -2,12 +2,19 @@
 
 import json
 import os
+import re
 
 from openai import APIConnectionError, RateLimitError, OpenAI
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 MODEL = "deepseek-chat"
 BASE_URL = "https://api.deepseek.com"
+
+
+def _strip_code_fence(text: str) -> str:
+    """Remove markdown code fences (```json ... ```) from LLM output."""
+    return re.sub(r"^```(?:json)?\s*\n?", "", re.sub(r"\n?```\s*$", "", text))
+
 
 PROMPT = """\
 你是技术内容编辑。下面是一组属于同一聚类的文章标题，请用中文给这个聚类起一个 \
@@ -42,7 +49,7 @@ def name_cluster(titles: list[str], *, client: OpenAI | None = None) -> dict:
     )
     text = resp.choices[0].message.content.strip()
     try:
-        return json.loads(text)
+        return json.loads(_strip_code_fence(text))
     except json.JSONDecodeError as e:
         raise ValueError(f"LLM did not return JSON: {text!r}") from e
 
@@ -79,6 +86,6 @@ def summarize_article(
     )
     content = resp.choices[0].message.content.strip()
     try:
-        return json.loads(content)
+        return json.loads(_strip_code_fence(content))
     except json.JSONDecodeError as e:
         raise ValueError(f"LLM did not return JSON: {content!r}") from e

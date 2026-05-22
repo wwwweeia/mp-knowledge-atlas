@@ -1,25 +1,15 @@
 # src/publish.py
-"""Render VitePress site from pipeline outputs."""
+"""Generate data.json for the SPA frontend."""
 
 import argparse
 import json
 import os
 from pathlib import Path
 
-from jinja2 import Environment, FileSystemLoader, select_autoescape
-
 from src.lib.db import fetch_all_articles, init_db
 
 
-def _env(templates_dir: str | Path) -> Environment:
-    return Environment(
-        loader=FileSystemLoader(str(templates_dir)),
-        autoescape=select_autoescape(["html"]),
-        keep_trailing_newline=True,
-    )
-
-
-def _related(
+def _related_domains(
     cluster_id: int,
     edges: list[dict],
     names: dict[int, str],
@@ -33,94 +23,125 @@ def _related(
             rels.append((e["source"], e["weight"]))
     rels.sort(key=lambda x: x[1], reverse=True)
     return [
-        {"cluster_id": cid, "name": names.get(cid, str(cid)), "weight": w}
+        {"id": cid, "name": names.get(cid, str(cid)), "similarity": round(w, 4)}
         for cid, w in rels[:k]
     ]
 
 
-def render_site(
+def _parse_keywords(raw: str | None) -> list[str]:
+    if not raw:
+        return []
+    try:
+        parsed = json.loads(raw)
+        return parsed if isinstance(parsed, list) else []
+    except (json.JSONDecodeError, TypeError):
+        return []
+
+
+def generate_data_json(
     *,
     named_path: Path,
     network_path: Path,
     db: Path,
-    templates_dir: str | Path,
-    site_dir: Path,
+    output_path: Path,
 ) -> None:
     init_db(db)
-    named = json.loads(Path(named_path).read_text())
-    network = json.loads(Path(network_path).read_text())
-    articles = {str(a["id"]): a for a in fetch_all_articles(db)}
+    named = json.loads(named_path.read_text(encoding="utf-8"))
+    network = json.loads(network_path.read_text(encoding="utf-8"))
+    all_articles = {str(a["id"]): a for a in fetch_all_articles(db)}
+
+    bridge_ids = {b["cluster_id"]: b["betweenness"] for b in network["bridges"]}
     name_by_cid = {c["cluster_id"]: c["name"] for c in named["clusters"]}
 
-    bridges_full = [
-        {
-            "cluster_id": b["cluster_id"],
-            "name": name_by_cid.get(b["cluster_id"], ""),
-            "betweenness": b["betweenness"],
-        }
-        for b in network["bridges"]
-    ]
+    domains = []
+    for c in named["clusters"]:
+        cid = c["cluster_id"]
+        cluster_articles = []
+        for aid in c["article_ids"]:
+            art = all_articles.get(str(aid))
+            if not art:
+                continue
+            cluster_articles.append({
+                "id": art["id"],
+                "title": art["title"],
+                "url": art["url"],
+                "source": art["feed_name"],
+                "date": (art["published_at"] or "")[:10],
+                "keywords": _parse_keywords(art.get("keywords")),
+                "summary": art.get("summary") or "",
+            })
 
-    # Recent articles sorted by published_at desc
-    all_articles_sorted = sorted(
-        articles.values(),
+        domains.append({
+            "id": cid,
+            "name": c["name"],
+            "description": c.get("description", ""),
+            "article_count": len(cluster_articles),
+            "keywords": c.get("keywords", []),
+            "is_bridge": cid in bridge_ids,
+            "betweenness": bridge_ids.get(cid, 0),
+            "articles": cluster_articles,
+            "related_domains": _related_domains(
+                cid, network["edges"], name_by_cid,
+            ),
+        })
+
+    all_sorted = sorted(
+        all_articles.values(),
         key=lambda a: a.get("published_at") or "",
         reverse=True,
     )
-    recent = all_articles_sorted[:20]
+    recent = [
+        {
+            "id": a["id"],
+            "title": a["title"],
+            "domain_id": 0,
+            "domain_name": "",
+            "date": (a["published_at"] or "")[:10],
+            "source": a.get("feed_name", ""),
+        }
+        for a in all_sorted[:20]
+    ]
 
-    env = _env(templates_dir)
-    site_dir = Path(site_dir)
-    (site_dir / "domains").mkdir(parents=True, exist_ok=True)
-    (site_dir / "articles").mkdir(parents=True, exist_ok=True)
+    article_to_domain = {}
+    for d in domains:
+        for art in d["articles"]:
+            article_to_domain[art["id"]] = (d["id"], d["name"])
+    for r in recent:
+        did, dname = article_to_domain.get(r["id"], (0, ""))
+        r["domain_id"] = did
+        r["domain_name"] = dname
 
-    (site_dir / "index.md").write_text(
-        env.get_template("index.md.j2").render(
-            clusters=named["clusters"],
-            bridges=bridges_full,
-            recent_articles=recent,
-        ),
+    data = {
+        "stats": {
+            "total_articles": len(all_articles),
+            "total_domains": len(domains),
+            "bridge_domains": len(bridge_ids),
+            "sources": len({a["feed_name"] for a in all_articles.values()}),
+        },
+        "domains": domains,
+        "network": {
+            "nodes": [
+                {
+                    "id": n["cluster_id"],
+                    "name": n["name"],
+                    "size": n["size"],
+                    "is_bridge": n["cluster_id"] in bridge_ids,
+                }
+                for n in network["nodes"]
+            ],
+            "edges": [
+                {"source": e["source"], "target": e["target"], "weight": e["weight"]}
+                for e in network["edges"]
+            ],
+        },
+        "recent_articles": recent,
+    }
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(
+        json.dumps(data, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
-
-    network_html = env.get_template("network.html.j2").render(
-        data_json=json.dumps(network, ensure_ascii=False)
-    )
-    (site_dir / "network.html").write_text(network_html, encoding="utf-8")
-    (site_dir / "public").mkdir(parents=True, exist_ok=True)
-    (site_dir / "public" / "network.html").write_text(network_html, encoding="utf-8")
-
-    for c in named["clusters"]:
-        cluster_articles = [
-            articles[aid] for aid in (str(a) for a in c["article_ids"])
-            if aid in articles
-        ]
-        page = env.get_template("domain.md.j2").render(
-            cluster=c,
-            articles=cluster_articles,
-            top_articles=c.get("top_articles", []),
-            related=_related(c["cluster_id"], network["edges"], name_by_cid),
-        )
-        (site_dir / "domains" / f"{c['cluster_id']}.md").write_text(
-            page, encoding="utf-8",
-        )
-
-        for aid in c["article_ids"]:
-            aid_str = str(aid)
-            if aid_str not in articles:
-                continue
-            art = articles[aid_str]
-            keywords_list = []
-            try:
-                keywords_list = json.loads(art.get("keywords", "[]"))
-            except (json.JSONDecodeError, TypeError):
-                pass
-            (site_dir / "articles" / f"{aid}.md").write_text(
-                env.get_template("article.md.j2").render(
-                    article=art, cluster=c, keywords_list=keywords_list,
-                ),
-                encoding="utf-8",
-            )
 
 
 def main() -> None:
@@ -129,17 +150,15 @@ def main() -> None:
     ap.add_argument("--named", default=f"{out}/clusters_named.json")
     ap.add_argument("--network", default=f"{out}/network.json")
     ap.add_argument("--db", default=os.environ.get("DB_PATH", "data/articles.db"))
-    ap.add_argument("--templates", default="templates")
-    ap.add_argument("--site", default=os.environ.get("SITE_DIR", "site/docs"))
+    ap.add_argument("--output", default=os.environ.get("DATA_JSON_PATH", "site/data/data.json"))
     a = ap.parse_args()
-    render_site(
+    generate_data_json(
         named_path=Path(a.named),
         network_path=Path(a.network),
         db=Path(a.db),
-        templates_dir=a.templates,
-        site_dir=Path(a.site),
+        output_path=Path(a.output),
     )
-    print(f"published to {a.site}")
+    print(f"generated {a.output}")
 
 
 if __name__ == "__main__":

@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from src.publish import render_site
+from src.publish import generate_data_json
 
 
 @pytest.fixture
@@ -47,18 +47,69 @@ def setup(tmp_path):
         "edges": [],
         "bridges": [{"cluster_id": 0, "betweenness": 1.0}],
     }))
-    templates = Path("templates")
-    site = tmp_path / "site"
-    return db, named, network, templates, site
+    output = tmp_path / "data.json"
+    return db, named, network, output
 
 
-def test_render_site_creates_files(setup):
-    db, named, network, templates, site = setup
-    render_site(
-        named_path=named, network_path=network, db=db,
-        templates_dir=templates, site_dir=site,
+def test_generate_data_json_creates_file(setup):
+    db, named, network, output = setup
+    generate_data_json(
+        named_path=named, network_path=network, db=db, output_path=output,
     )
-    assert (site / "index.md").exists()
-    assert (site / "domains" / "0.md").exists()
-    assert (site / "articles" / "1.md").exists()
-    assert (site / "network.html").exists()
+    assert output.exists()
+
+
+def test_generate_data_json_structure(setup):
+    db, named, network, output = setup
+    generate_data_json(
+        named_path=named, network_path=network, db=db, output_path=output,
+    )
+    data = json.loads(output.read_text())
+
+    assert "stats" in data
+    assert data["stats"]["total_articles"] == 1
+    assert data["stats"]["total_domains"] == 1
+    assert data["stats"]["bridge_domains"] == 1
+    assert data["stats"]["sources"] == 1
+
+    assert "domains" in data
+    assert len(data["domains"]) == 1
+    domain = data["domains"][0]
+    assert domain["id"] == 0
+    assert domain["name"] == "人工智能"
+    assert domain["description"] == "AI相关技术"
+    assert domain["article_count"] == 1
+    assert domain["keywords"] == ["AI", "深度学习"]
+    assert domain["is_bridge"] is True
+    assert domain["betweenness"] == 1.0
+    assert len(domain["articles"]) == 1
+    assert domain["articles"][0]["title"] == "AI技术"
+    assert domain["articles"][0]["source"] == "阿里云开发者"
+
+    assert "network" in data
+    assert len(data["network"]["nodes"]) == 1
+    assert len(data["network"]["edges"]) == 0
+
+    assert "recent_articles" in data
+    assert len(data["recent_articles"]) == 1
+
+
+def test_generate_data_json_network_edges(setup, tmp_path):
+    db, named, network, output = setup
+    network.write_text(json.dumps({
+        "nodes": [
+            {"cluster_id": 0, "name": "人工智能", "size": 1},
+            {"cluster_id": 1, "name": "大数据", "size": 2},
+        ],
+        "edges": [{"source": 0, "target": 1, "weight": 0.85}],
+        "bridges": [{"cluster_id": 0, "betweenness": 1.0}],
+    }))
+    generate_data_json(
+        named_path=named, network_path=network, db=db, output_path=output,
+    )
+    data = json.loads(output.read_text())
+    assert len(data["network"]["edges"]) == 1
+    edge = data["network"]["edges"][0]
+    assert edge["source"] == 0
+    assert edge["target"] == 1
+    assert edge["weight"] == 0.85

@@ -6,7 +6,7 @@
 
 **Architecture:** Makefile 串联 6 个独立 stage（ingest → embed → cluster → name → network → publish），SQLite 是单一真理源，ChromaDB 是向量缓存，所有中间产物落 JSON。无常驻服务、无 Web 后端。
 
-**Tech Stack:** Python 3.12 + uv，SQLite，ChromaDB，OpenAI `text-embedding-3-small`，HDBSCAN/K-means，networkx，Claude Haiku 4.5 (`claude-haiku-4-5-20251001`)，jieba（fallback），VitePress + D3，Jinja2 模板，pytest。
+**Tech Stack:** Python 3.12 + uv，SQLite，ChromaDB，`nomic-embed-text`（Ollama 本地），HDBSCAN/K-means，networkx，Claude Haiku 4.5 (`claude-haiku-4-5-20251001`)，jieba（fallback），VitePress + D3，Jinja2 模板，pytest。
 
 **Spec：** [`docs/superpowers/specs/2026-05-21-knowledge-map-mvp-design.md`](../specs/2026-05-21-knowledge-map-mvp-design.md)
 
@@ -68,7 +68,7 @@ out/                            # pipeline 中间产物（gitignore）
 - Create: `.env.example`
 - Create: `.gitignore`
 
-- [ ] **Step 1: 写 pyproject.toml**
+- [x] **Step 1: 写 pyproject.toml**
 
 ```toml
 [project]
@@ -76,7 +76,7 @@ name = "tech-articles-collector"
 version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
-    "openai>=1.40.0",
+    "ollama>=0.3.0",
     "anthropic>=0.40.0",
     "chromadb>=0.5.0",
     "hdbscan>=0.8.38",
@@ -97,18 +97,18 @@ pythonpath = ["."]
 addopts = "-v --cov=src --cov-report=term-missing"
 ```
 
-- [ ] **Step 2: 写 .env.example**
+- [x] **Step 2: 写 .env.example**
 
 ```
-OPENAI_API_KEY=sk-xxx
 ANTHROPIC_API_KEY=sk-ant-xxx
+OLLAMA_HOST=http://localhost:11434
 DB_PATH=data/articles.db
 CHROMA_PATH=data/chroma
 OUT_DIR=out
 SITE_DIR=site/docs
 ```
 
-- [ ] **Step 3: 写 .gitignore**
+- [x] **Step 3: 写 .gitignore**
 
 ```
 .venv/
@@ -124,12 +124,12 @@ site/.vitepress/dist/
 .env
 ```
 
-- [ ] **Step 4: 验证 uv sync 通过**
+- [x] **Step 4: 验证 uv sync 通过**
 
 Run: `http_proxy=http://127.0.0.1:7897 https_proxy=http://127.0.0.1:7897 all_proxy=socks5://127.0.0.1:7897 uv sync`
 Expected: 所有依赖安装成功，无解析错误。
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit** — `ced2b4b`
 
 ```bash
 git add pyproject.toml .env.example .gitignore
@@ -147,7 +147,7 @@ git commit -m "chore: 初始化 Python 项目结构与依赖"
 - Create: `src/lib/db.py`
 - Create: `tests/__init__.py`、`tests/unit/__init__.py`、`tests/unit/test_db.py`
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 ```python
 # tests/unit/test_db.py
@@ -174,12 +174,12 @@ def test_insert_and_fetch_pending(tmp_path):
     assert {p["title"] for p in pending} == {"A", "B"}
 ```
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `uv run pytest tests/unit/test_db.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'src.lib.db'`
 
-- [ ] **Step 3: 写最小实现**
+- [x] **Step 3: 写最小实现**
 
 ```python
 # src/lib/db.py
@@ -243,12 +243,12 @@ def fetch_all_articles(path: Path):
     return [dict(r) for r in rows]
 ```
 
-- [ ] **Step 4: 跑测试确认通过**
+- [x] **Step 4: 跑测试确认通过**
 
 Run: `uv run pytest tests/unit/test_db.py -v`
 Expected: 2 passed
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit** — `75b3d7c` / `ff3204a`（含 rollback + 类型注解修复）
 
 ```bash
 git add src/lib/db.py src/__init__.py src/lib/__init__.py tests/
@@ -264,7 +264,7 @@ git commit -m "feat(db): 添加 SQLite 连接、schema 初始化与文章 CRUD"
 - Create: `tests/unit/test_parse.py`
 - Create: `tests/fixtures/mini_index.md`
 
-- [ ] **Step 1: 写 fixture 与失败测试**
+- [x] **Step 1: 写 fixture 与失败测试**
 
 ```markdown
 <!-- tests/fixtures/mini_index.md -->
@@ -307,12 +307,12 @@ def test_parse_url_and_source():
     assert rows[2]["source"] == "zhihu"
 ```
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `uv run pytest tests/unit/test_parse.py -v`
 Expected: FAIL — `ModuleNotFoundError`
 
-- [ ] **Step 3: 写实现**
+- [x] **Step 3: 写实现**
 
 ```python
 # src/lib/parse.py
@@ -365,12 +365,12 @@ def parse_index(text: str) -> list[dict]:
     return rows
 ```
 
-- [ ] **Step 4: 跑测试确认通过**
+- [x] **Step 4: 跑测试确认通过**
 
 Run: `uv run pytest tests/unit/test_parse.py -v`
 Expected: 3 passed
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/lib/parse.py tests/unit/test_parse.py tests/fixtures/mini_index.md
@@ -465,41 +465,34 @@ git commit -m "feat(migrate): 一次性把 articles/*.md 迁移到 SQLite"
 
 ---
 
-### Task 5: lib/embedding.py — OpenAI client with retry
+### Task 5: lib/embedding.py — Ollama embedding client with retry
 
 **Files:**
 - Create: `src/lib/embedding.py`
 - Create: `tests/unit/test_embedding.py`
 
-- [ ] **Step 1: 写失败测试（mock OpenAI）**
+- [ ] **Step 1: 写失败测试（mock Ollama）**
 
 ```python
 # tests/unit/test_embedding.py
-from unittest.mock import MagicMock
+from unittest.mock import patch, MagicMock
 from src.lib.embedding import embed_texts
 
-def test_embed_texts_calls_openai_and_returns_vectors():
-    fake = MagicMock()
-    fake.embeddings.create.return_value = MagicMock(
-        data=[MagicMock(embedding=[0.1, 0.2]),
-              MagicMock(embedding=[0.3, 0.4])]
-    )
-    vecs = embed_texts(["a", "b"], client=fake)
+def test_embed_texts_returns_vectors():
+    mock_resp = MagicMock()
+    mock_resp.embeddings = [[0.1, 0.2], [0.3, 0.4]]
+    with patch("src.lib.embedding.ollama.embed", return_value=mock_resp):
+        vecs = embed_texts(["a", "b"])
     assert vecs == [[0.1, 0.2], [0.3, 0.4]]
-    fake.embeddings.create.assert_called_once_with(
-        model="text-embedding-3-small", input=["a", "b"]
-    )
 
-def test_embed_texts_retries_on_transient_error():
-    from openai import APIConnectionError
-    fake = MagicMock()
-    fake.embeddings.create.side_effect = [
-        APIConnectionError(request=MagicMock()),
-        MagicMock(data=[MagicMock(embedding=[1.0])]),
-    ]
-    vecs = embed_texts(["x"], client=fake)
+def test_embed_texts_retries_on_connection_error():
+    import httpx
+    mock_resp = MagicMock()
+    mock_resp.embeddings = [[1.0]]
+    with patch("src.lib.embedding.ollama.embed",
+               side_effect=[httpx.ConnectError("refused"), mock_resp]):
+        vecs = embed_texts(["x"])
     assert vecs == [[1.0]]
-    assert fake.embeddings.create.call_count == 2
 ```
 
 - [ ] **Step 2: 跑测试确认失败**
@@ -511,25 +504,21 @@ Expected: FAIL — `No module named src.lib.embedding`
 
 ```python
 # src/lib/embedding.py
-import os
-from openai import OpenAI, APIConnectionError, RateLimitError
+import httpx
+import ollama
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
-MODEL = "text-embedding-3-small"
-
-def get_client() -> OpenAI:
-    return OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+MODEL = "nomic-embed-text:v1.5"
 
 @retry(
     stop=stop_after_attempt(3),
     wait=wait_exponential(multiplier=1, min=2, max=10),
-    retry=retry_if_exception_type((APIConnectionError, RateLimitError)),
+    retry=retry_if_exception_type(httpx.ConnectError),
     reraise=True,
 )
-def embed_texts(texts: list[str], *, client: OpenAI | None = None) -> list[list[float]]:
-    cli = client or get_client()
-    resp = cli.embeddings.create(model=MODEL, input=texts)
-    return [d.embedding for d in resp.data]
+def embed_texts(texts: list[str]) -> list[list[float]]:
+    resp = ollama.embed(model=MODEL, input=texts)
+    return resp.embeddings
 ```
 
 - [ ] **Step 4: 跑测试确认通过**
@@ -541,7 +530,7 @@ Expected: 2 passed
 
 ```bash
 git add src/lib/embedding.py tests/unit/test_embedding.py
-git commit -m "feat(embedding): 封装 OpenAI embedding 调用与指数退避重试"
+git commit -m "feat(embedding): 封装 Ollama nomic-embed-text 调用与指数退避重试"
 ```
 
 ---

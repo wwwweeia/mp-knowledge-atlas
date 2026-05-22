@@ -44,9 +44,15 @@ const NavBar = {
           dom.keywords.some((k) => k.toLowerCase().includes(q))
       );
 
+      const seen = new Set();
       const articles = d.domains
         .flatMap((dom) => dom.articles)
-        .filter((a) => a.title.toLowerCase().includes(q))
+        .filter((a) => {
+          if (!a.title.toLowerCase().includes(q)) return false;
+          if (seen.has(a.id)) return false;
+          seen.add(a.id);
+          return true;
+        })
         .slice(0, 8);
 
       return { domains: domains.slice(0, 5), articles };

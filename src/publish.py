@@ -57,10 +57,12 @@ def generate_data_json(
     for c in named["clusters"]:
         cid = c["cluster_id"]
         cluster_articles = []
+        seen_ids: set[int] = set()
         for aid in c["article_ids"]:
             art = all_articles.get(str(aid))
-            if not art:
+            if not art or art["id"] in seen_ids:
                 continue
+            seen_ids.add(art["id"])
             cluster_articles.append({
                 "id": art["id"],
                 "title": art["title"],

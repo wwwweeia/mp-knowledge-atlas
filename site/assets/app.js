@@ -141,15 +141,15 @@ const HomeView = {
       </div>
 
       <!-- Main: Network + Domains -->
-      <div class="two-col" style="min-height:340px">
-        <div class="card" style="position:relative;overflow:hidden;min-height:300px">
+      <div class="two-col" style="height:520px">
+        <div class="card" style="position:relative;overflow:hidden;flex:1">
           <div style="position:absolute;top:12px;left:12px;color:var(--text-muted);font-size:12px">知识图谱</div>
           <div style="position:absolute;bottom:12px;right:12px;z-index:5">
             <router-link to="/graph" class="tag-accent" style="cursor:pointer">全屏展开 →</router-link>
           </div>
-          <div id="thumbnail-graph" style="width:100%;height:100%"></div>
+          <div id="thumbnail-graph" style="position:absolute;inset:0;z-index:1"></div>
         </div>
-        <div style="display:flex;flex-direction:column;gap:8px;overflow-y:auto">
+        <div style="display:flex;flex-direction:column;gap:8px;overflow-y:auto;flex:1">
           <div class="section-header">
             <span class="section-title">领域聚类</span>
             <span class="section-subtitle">{{ data.stats.total_domains }} 个领域</span>
@@ -191,13 +191,16 @@ const HomeView = {
     <div v-else class="loading">加载中...</div>
   `,
   mounted() {
+    const render = (data) => {
+      requestAnimationFrame(() => renderThumbnail(data.network));
+    };
     if (store.data.value) {
-      this.$nextTick(() => renderThumbnail(store.data.value.network));
+      this.$nextTick(() => render(store.data.value));
     }
     watch(
       () => store.data.value,
       (val) => {
-        if (val) nextTick(() => renderThumbnail(val.network));
+        if (val) nextTick(() => render(val));
       }
     );
   },
@@ -392,43 +395,108 @@ const ArticleView = {
 
 // ---- Full-screen Graph ----
 const GraphView = {
+  setup() {
+    const searchQuery = ref('');
+    const activeLayout = ref('concentric');
+    const edgeThreshold = ref(0);
+    const graphApi = ref(null);
+
+    function onSearchInput() {
+      if (graphApi.value) graphApi.value.search(searchQuery.value);
+    }
+    function onLayoutClick(name) {
+      activeLayout.value = name;
+      if (graphApi.value) graphApi.value.switchLayout(name);
+    }
+    function onThresholdChange() {
+      if (graphApi.value) graphApi.value.setEdgeThreshold(edgeThreshold.value);
+    }
+    function onResetLayout() {
+      if (graphApi.value) graphApi.value.resetLayout();
+    }
+
+    return {
+      store, searchQuery, activeLayout, edgeThreshold, graphApi,
+      onSearchInput, onLayoutClick, onThresholdChange, onResetLayout
+    };
+  },
   template: `
     <div class="graph-page">
-      <div style="position:absolute;top:16px;left:16px;display:flex;gap:12px;z-index:10">
+      <!-- Top-left: close + title -->
+      <div class="graph-tl">
         <router-link to="/" class="graph-overlay">✕ 关闭</router-link>
         <span class="graph-overlay title">知识图谱</span>
       </div>
-      <div class="graph-legend">
-        <div class="legend-title">图例</div>
-        <div class="legend-item">
-          <div class="dot" style="width:12px;height:12px;background:var(--accent);border:2px solid var(--accent-light)"></div>
-          <span>桥梁领域</span>
+
+      <!-- Top-center: search -->
+      <div class="graph-search">
+        <span class="graph-search-icon">⌘</span>
+        <input
+          v-model="searchQuery"
+          @input="onSearchInput"
+          class="graph-search-input"
+          placeholder="搜索领域..."
+        />
+      </div>
+
+      <!-- Top-right: layout switcher -->
+      <div class="graph-layouts">
+        <button class="graph-layout-btn" :class="{ active: activeLayout === 'concentric' }" @click="onLayoutClick('concentric')">⊙ 同心圆</button>
+        <button class="graph-layout-btn" :class="{ active: activeLayout === 'cose-bilkent' }" @click="onLayoutClick('cose-bilkent')">∘ 力导向</button>
+        <button class="graph-layout-btn" :class="{ active: activeLayout === 'circle' }" @click="onLayoutClick('circle')">○ 环形</button>
+      </div>
+
+      <!-- Right: legend + slider -->
+      <div class="graph-right">
+        <div class="graph-legend">
+          <div class="legend-title">图例</div>
+          <div class="legend-item">
+            <div class="dot" style="width:12px;height:12px;border-radius:50%;background:linear-gradient(135deg,#5e6ad2,#8b5cf6);box-shadow:0 0 6px rgba(94,106,210,0.4)"></div>
+            <span>桥梁领域</span>
+          </div>
+          <div class="legend-item">
+            <div class="dot" style="width:10px;height:10px;border-radius:50%;background:linear-gradient(135deg,#3a3f5c,#5e6ad2)"></div>
+            <span>普通领域</span>
+          </div>
+          <div class="legend-item">
+            <svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke="#5e6ad2" stroke-width="2" opacity="0.6"/></svg>
+            <span>关联强度</span>
+          </div>
         </div>
-        <div class="legend-item">
-          <div class="dot" style="width:10px;height:10px;background:#3d4250"></div>
-          <span>普通领域</span>
-        </div>
-        <div class="legend-item">
-          <div style="width:20px;height:2px;background:var(--border-light)"></div>
-          <span>关联强度</span>
+        <div class="graph-slider-panel">
+          <div class="graph-slider-label">边权重阈值</div>
+          <input type="range" min="0" max="80" v-model.number="edgeThreshold" @input="onThresholdChange" class="graph-slider" />
+          <div class="graph-slider-range"><span>全部</span><span>强关联</span></div>
         </div>
       </div>
-      <div id="fullscreen-graph"></div>
+
+      <div id="fullscreen-graph" style="width:100%;height:100%"></div>
+
+      <!-- Bottom bar -->
       <div class="graph-bottom-bar">
         <span>{{ store.data.value ? store.data.value.stats.total_domains : '' }} 个领域</span>
         <span>{{ store.data.value ? store.data.value.stats.total_articles : '' }} 篇文章</span>
+        <span class="graph-bottom-sep">|</span>
         <span>拖拽节点 · 滚轮缩放 · 点击进入</span>
+        <span class="graph-reset-btn" @click="onResetLayout">↺ 重置布局</span>
       </div>
     </div>
   `,
   mounted() {
-    if (store.data.value) {
-      this.$nextTick(() => renderFullscreen(store.data.value.network));
-    }
+    const doRender = () => {
+      if (!store.data.value) return;
+      var el = document.getElementById("fullscreen-graph");
+      if (el && el.clientWidth > 0 && el.clientHeight > 0) {
+        this.graphApi = renderFullscreen(store.data.value.network);
+      } else {
+        requestAnimationFrame(doRender);
+      }
+    };
+    this.$nextTick(() => requestAnimationFrame(doRender));
     watch(
       () => store.data.value,
       (val) => {
-        if (val) nextTick(() => renderFullscreen(val.network));
+        if (val) nextTick(() => requestAnimationFrame(doRender));
       }
     );
   },

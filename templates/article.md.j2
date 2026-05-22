@@ -1,13 +1,20 @@
 {# templates/article.md.j2 #}
 # {{ article.title }}
 
-{% if article.url %}[阅读原文]({{ article.url }}){% else %}_未找到原文链接_{% endif %}
+{% if article.url %}[阅读原文]({{ article.url }}){% endif %}
 
-- **来源**：{{ article.source or "未知" }}
-- **原分类**：{{ article.manual_tag or "无" }}
+- **来源**：{{ article.feed_name or "未知" }}
 - **所属领域**：[{{ cluster.name }}](/domains/{{ cluster.cluster_id }})
-- **收藏时间**：{{ article.added_at }}
+- **发布时间**：{{ article.published_at or "未知" }}
+{% if article.keywords and article.keywords != "[]" %}
 
-{% if article.summary %}## 摘要
+## 关键词
 
-{{ article.summary }}{% endif %}
+{% for kw in keywords_list %}`{{ kw }}` {% endfor %}
+{% endif %}
+{% if article.summary and article.summary != article.title %}
+
+## 摘要
+
+{{ article.summary }}
+{% endif %}

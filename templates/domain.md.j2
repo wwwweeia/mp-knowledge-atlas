@@ -1,14 +1,26 @@
 {# templates/domain.md.j2 #}
 # {{ cluster.name }}
 
-> {{ cluster.description }}{% if cluster.fallback %} _(TF-IDF 兜底命名)_{% endif %}
+> {{ cluster.description }}
 
 **文章数**：{{ cluster.article_ids|length }}
+{% if cluster.keywords %}
 
-## 文章列表
+## 领域关键词
+
+{% for kw in cluster.keywords %}`{{ kw }}` {% endfor %}
+{% endif %}
+
+## 代表性文章
+
+{% for a in top_articles %}
+- **{{ a.title }}**{% if a.summary %} — {{ a.summary }}{% endif %}
+{% endfor %}
+
+## 全部文章
 
 {% for a in articles %}
-- [{{ a.title }}]({% if a.url %}{{ a.url }}{% else %}/articles/{{ a.id }}{% endif %}){% if a.manual_tag %} _[原分类: {{ a.manual_tag }}]_{% endif %}
+- [{{ a.title }}]({% if a.url %}{{ a.url }}{% else %}/articles/{{ a.id }}{% endif %}) {% if a.published_at %}_{{ a.published_at[:10] }}_{% endif %}
 {% endfor %}
 
 ## 关联领域

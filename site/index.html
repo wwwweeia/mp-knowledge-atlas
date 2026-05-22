@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>技术文章知识地图</title>
+  <link rel="icon" href="/favicon.ico">
+  <link rel="stylesheet" href="/assets/app.css">
+</head>
+<body>
+  <div id="app">
+    <nav-bar></nav-bar>
+    <router-view v-slot="{ Component }">
+      <transition name="fade" mode="out-in">
+        <component :is="Component" />
+      </transition>
+    </router-view>
+  </div>
+
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script src="https://unpkg.com/vue-router@4/dist/vue-router.global.prod.js"></script>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="/assets/network-graph.js"></script>
+  <script src="/assets/app.js"></script>
+</body>
+</html>

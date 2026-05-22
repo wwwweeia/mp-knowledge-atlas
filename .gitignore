@@ -10,3 +10,5 @@ site/node_modules/
 site/.vitepress/cache/
 site/.vitepress/dist/
 .env
+.superpowers/
+.claude/

@@ -5,10 +5,10 @@ import subprocess
 def test_migrate_writes_articles_to_sqlite(tmp_path):
     idx = tmp_path / "ai.md"
     idx.write_text(
-        "### AI Coding\n\n"
-        "| # | 标题 | 链接 | 来源 | 收藏日期 |\n"
-        "|---|------|------|------|---------|\n"
-        "| 1 | 测试文章 | [微信](https://mp.weixin.qq.com/s/x) | mp公众号 | 2026-05-01 |\n"
+        "# AI Coding\n\n"
+        "| # | 标题 | 链接 |\n"
+        "|---|------|------|\n"
+        "| 1 | 测试文章 | [微信](https://mp.weixin.qq.com/s/x) |\n"
     )
     db = tmp_path / "t.db"
     r = subprocess.run(

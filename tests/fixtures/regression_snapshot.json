@@ -1,0 +1,13 @@
+{
+  "n_clusters": 5,
+  "bridges": [
+    0,
+    1,
+    2
+  ],
+  "bridge_names": [
+    "AI编码与智能体协同",
+    "Agent与AI编程实践",
+    "LLM智能体知识架构设计"
+  ]
+}

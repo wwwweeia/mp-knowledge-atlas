@@ -6,6 +6,8 @@ import os
 from collections import defaultdict
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 from src.lib.llm import name_cluster
 from src.lib.tfidf_fallback import keyword_name
 
@@ -53,6 +55,7 @@ def run_name(*, in_path: Path, out_path: Path) -> None:
 
 
 def main() -> None:
+    load_dotenv()
     ap = argparse.ArgumentParser(description="Name clusters via LLM with TF-IDF fallback")
     out = os.environ.get("OUT_DIR", "out")
     ap.add_argument("--in", dest="inp", default=f"{out}/clusters.json")

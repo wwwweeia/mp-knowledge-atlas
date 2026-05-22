@@ -1,8 +1,8 @@
 import re
 
-ROW_RE = re.compile(r"^\|\s*\d+\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|$")
+ROW_RE = re.compile(r"^\|\s*\d+\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|")
 LINK_RE = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
-SECTION_RE = re.compile(r"^###\s+(.+?)\s*$")
+SECTION_RE = re.compile(r"^#+\s+(.+?)\s*$")
 
 SOURCE_BY_DOMAIN = {
     "mp.weixin.qq.com": "wechat",
@@ -33,7 +33,7 @@ def parse_index(text: str) -> list[dict]:
         m = ROW_RE.match(line)
         if not m:
             continue
-        title, link_cell, _src_cell, _date = (s.strip() for s in m.groups())
+        title, link_cell = (s.strip() for s in m.groups())
         link_m = LINK_RE.search(link_cell)
         url = link_m.group(2) if link_m else None
         if url and not url.startswith("http"):

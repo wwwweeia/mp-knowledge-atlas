@@ -21,11 +21,11 @@ def test_full_pipeline_on_six_articles(tmp_path: Path) -> None:
     # -- Arrange: seed markdown index -----------------------------------------
     idx = tmp_path / "ai.md"
     idx.write_text(
-        "### AI\n\n"
-        "| # | 标题 | 链接 | 来源 | 日期 |\n"
-        "|---|---|---|---|---|\n"
+        "# AI\n\n"
+        "| # | 标题 | 链接 |\n"
+        "|---|------|------|\n"
         + "\n".join(
-            f"| {i} | t{i} | 未找到 | x | 2026-01-01 |" for i in range(1, 7)
+            f"| {i} | t{i} | 未找到 |" for i in range(1, 7)
         ),
         encoding="utf-8",
     )

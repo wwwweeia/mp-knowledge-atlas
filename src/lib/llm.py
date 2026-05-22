@@ -1,12 +1,13 @@
-"""Claude Haiku client for cluster naming."""
+"""DeepSeek (OpenAI-compatible) client for cluster naming."""
 
 import json
 import os
 
-from anthropic import Anthropic, APIConnectionError, RateLimitError
+from openai import APIConnectionError, RateLimitError, OpenAI
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
-MODEL = "claude-haiku-4-5-20251001"
+MODEL = "deepseek-chat"
+BASE_URL = "https://api.deepseek.com"
 
 PROMPT = """\
 你是技术内容编辑。下面是一组属于同一聚类的文章标题，请用中文给这个聚类起一个 \
@@ -18,9 +19,11 @@ PROMPT = """\
 {titles}"""
 
 
-def get_client() -> Anthropic:
-    """Create Anthropic client from environment variable."""
-    return Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+def get_client() -> OpenAI:
+    return OpenAI(
+        api_key=os.environ["DEEPSEEK_API_KEY"],
+        base_url=BASE_URL,
+    )
 
 
 @retry(
@@ -29,29 +32,15 @@ def get_client() -> Anthropic:
     retry=retry_if_exception_type((APIConnectionError, RateLimitError)),
     reraise=True,
 )
-def name_cluster(titles: list[str], *, client: Anthropic | None = None) -> dict:
-    """Ask Claude Haiku to name a cluster given a list of article titles.
-
-    Args:
-        titles: Article titles belonging to the cluster (max 20 sent to LLM).
-        client: Optional Anthropic client for testing.
-
-    Returns:
-        Dict with "name" and "description" keys.
-
-    Raises:
-        ValueError: If LLM response is not valid JSON.
-        APIConnectionError: If all retry attempts fail on connection errors.
-        RateLimitError: If all retry attempts fail on rate limits.
-    """
+def name_cluster(titles: list[str], *, client: OpenAI | None = None) -> dict:
     cli = client or get_client()
     prompt = PROMPT.format(titles="\n".join(f"- {t}" for t in titles[:20]))
-    resp = cli.messages.create(
+    resp = cli.chat.completions.create(
         model=MODEL,
         max_tokens=256,
         messages=[{"role": "user", "content": prompt}],
     )
-    text = resp.content[0].text.strip()
+    text = resp.choices[0].message.content.strip()
     try:
         return json.loads(text)
     except json.JSONDecodeError as e:

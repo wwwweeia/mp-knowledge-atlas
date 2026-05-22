@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from src.lib.llm import name_cluster
+from src.lib.llm import name_cluster, summarize_article
 
 
 class TestNameCluster:
@@ -57,3 +57,44 @@ class TestNameCluster:
             assert f"Article {i}" not in prompt
         assert "Article 0" in prompt
         assert "Article 19" in prompt
+
+
+class TestSummarizeArticle:
+    def test_returns_summary_and_keywords(self):
+        mock_resp = MagicMock()
+        mock_resp.choices = [
+            MagicMock(
+                message=MagicMock(
+                    content='{"summary": "关于AI的测试摘要", "keywords": ["AI", "测试"]}'
+                )
+            )
+        ]
+        client = MagicMock()
+        client.chat.completions.create.return_value = mock_resp
+        result = summarize_article("文章标题", "这是文章正文", client=client)
+        assert result["summary"] == "关于AI的测试摘要"
+        assert result["keywords"] == ["AI", "测试"]
+
+    def test_handles_non_technical(self):
+        mock_resp = MagicMock()
+        mock_resp.choices = [
+            MagicMock(
+                message=MagicMock(
+                    content='{"summary": "招聘信息", "keywords": ["招聘", "非技术"]}'
+                )
+            )
+        ]
+        client = MagicMock()
+        client.chat.completions.create.return_value = mock_resp
+        result = summarize_article("招聘", "岗位要求...", client=client)
+        assert "非技术" in result["keywords"]
+
+    def test_raises_on_bad_json(self):
+        mock_resp = MagicMock()
+        mock_resp.choices = [
+            MagicMock(message=MagicMock(content="not json at all"))
+        ]
+        client = MagicMock()
+        client.chat.completions.create.return_value = mock_resp
+        with pytest.raises(ValueError):
+            summarize_article("标题", "正文", client=client)

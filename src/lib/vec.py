@@ -2,7 +2,7 @@ from pathlib import Path
 
 import chromadb
 
-COLLECTION = "articles_v1"
+COLLECTION = "articles_v2"
 
 
 class VecStore:

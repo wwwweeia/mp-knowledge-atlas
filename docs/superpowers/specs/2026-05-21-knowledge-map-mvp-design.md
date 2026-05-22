@@ -143,7 +143,7 @@ make all        # refresh + build
 
 | 项目 | 选 | 理由 |
 |------|----|------|
-| Embedding | OpenAI `text-embedding-3-small` | 53 篇成本 < $0.01；二期 RSS 增量也廉价 |
+| Embedding | `nomic-embed-text`（Ollama 本地） | 完全免费离线；无需 OpenAI Key |
 | 聚类 | HDBSCAN（首选）+ K-means fallback | HDBSCAN 自动 k；噪音过多时降级 K-means(k=`round(sqrt(N/2))`) |
 | 桥梁分析 | networkx `betweenness_centrality` | 53 节点零压力，Python 标配 |
 | LLM 命名 | Claude Haiku 4.5 | 任务简单，比 Sonnet 省 90% |
@@ -177,7 +177,7 @@ make all        # refresh + build
    ↓
 [2. embed] python -m src.embed
    读 articles WHERE embedding_id IS NULL OR = '__failed__'
-   调用 OpenAI embedding API → 写 ChromaDB
+   调用 Ollama nomic-embed-text:v1.5 → 写 ChromaDB
    更新 articles.embedding_id
    ↓
 [3. cluster] python -m src.cluster
@@ -300,7 +300,7 @@ make all        # refresh + build
 | 风险 | 概率 | 影响 | 缓解 |
 |------|------|------|------|
 | 53 篇样本太小，聚类不稳定 | 中 | 高（产品假设破产） | Phase 2 验收门槛卡住；不通过则暂停 Phase 3 |
-| OpenAI API 配额 / 网络抖动 | 低 | 低 | 指数退避 + 失败标记，下次重试 |
+| Ollama 服务异常 / 网络抖动 | 低 | 低 | 指数退避 + 失败标记，下次重试 |
 | Claude Haiku 命名质量差 | 中 | 中 | jieba TF-IDF fallback 兜底，至少可用 |
 | 网络图 D3 调参耗时 | 中 | 低 | 用现成模板，不追求精美 |
 | 二期 A 的微信反爬虫 | 高 | 中 | 已隔离到二期，不阻塞 MVP |

@@ -2,53 +2,66 @@
 
 ## 项目说明
 
-技术文章收藏与整理项目。文章来源为企业微信群聊转发消息，通过 wecom-cli 读取。
+技术文章知识地图：从微信公众号自动采集文章，通过 embedding + 聚类 + 网络分析生成领域知识地图，发布为 VitePress 静态站。
+
+## 数据源
+
+### We-MP-RSS（主数据源）
+
+微信公众号订阅服务，Docker 部署在本地。
+
+| 项目 | 值 |
+|------|-----|
+| 位置 | `/Users/wqw/Documents/idea_work/tools/we-mp-rss/` |
+| 访问地址 | http://localhost:8001 |
+| 数据库 | `data/we_mp_rss.db`（SQLite） |
+| 文档 | 见上述目录下的 `README.md` |
+
+通过微信读书扫码登录，自动抓取已订阅公众号的文章（标题、URL、全文），后台持续补抓内容。
+
+当前订阅：10 个公众号，500+ 篇文章（持续增长中）。
+
+**与本项目的衔接**：pipeline 的 `ingest` stage 从 We-MP-RSS 的 SQLite 数据库读取文章数据，取代原来的 `articles/*.md` 手工索引。
+
+### articles/*.md（历史数据）
+
+手动维护的 53 篇文章索引，保留为只读历史快照。新文章只走 We-MP-RSS。
+
+## Pipeline 架构
+
+```
+We-MP-RSS SQLite ──→ ingest ──→ embed ──→ cluster ──→ name ──→ network ──→ publish ──→ VitePress
+(数据源)              (读DB)    (向量)    (聚类)     (命名)   (桥梁分析)  (渲染MD/HTML)   (静态站)
+```
+
+### 关键命令
+
+```bash
+make refresh   # embed → cluster → name → network → publish
+make build     # vitepress build
+make all       # refresh + build
+make serve     # 本地预览
+```
 
 ## 目录结构
 
-- `articles/index.md` — 总索引（53 篇文章，含编号、标题、URL、来源、收藏日期）
-- `articles/ai-coding.md` — AI Coding / Claude Code（21 篇）
-- `articles/harness-engineering.md` — Harness Engineering / Spec Coding / SDD（11 篇）
-- `articles/agent-architecture.md` — Agent 架构 / Skills（12 篇）
-- `articles/knowledge-management.md` — 知识管理 / RAG / Wiki（4 篇）
-- `articles/industry-insights.md` — 行业思考（5 篇）
+```
+src/
+├── ingest.py        # 从 We-MP-RSS SQLite 读取文章
+├── embed.py         # 嵌入 → ChromaDB
+├── cluster.py       # HDBSCAN / K-means 聚类
+├── name.py          # LLM 命名 + TF-IDF fallback
+├── network.py       # betweenness 桥梁分析
+├── publish.py       # 渲染 VitePress markdown + 网络图
+└── lib/             # db / vec / llm 封装
 
-## 链接状态
+site/                # VitePress 站点（publish.py 写入）
+out/                 # pipeline 中间产物（gitignore）
+articles/            # 历史手工索引（只读）
+```
 
-- 微信公众号原文：30 篇（通过 Tavily `site:mp.weixin.qq.com` 搜索获取）
-- 转载链接（fallback）：16 篇（知乎、CSDN、阿里云等平台转载）
-- 未找到链接：7 篇
+## 设计文档
 
-## 待解决问题
-
-### 1. 23 篇文章未找到微信公众号原文 URL
-
-搜索引擎对微信公众号文章的收录率有限（约 57%）。尝试过的方案：
-- `site:mp.weixin.qq.com` Google/Bing 搜索
-- Tavily `--include-domains mp.weixin.qq.com` 搜索
-- 搜狗微信搜索（反爬虫机制，无法自动化）
-
-可能解决方案：
-- 用户从微信收藏中手动复制链接补充
-- 通过微信读书或微信 PC 端搜索功能找到原文
-- 使用浏览器自动化（Playwright）操作搜狗微信搜索，绕过反爬
-
-### 2. 企业微信 API 只返回消息标题，不含 URL
-
-wecom-cli 的 `get_message` API 对文章卡片类消息只返回 `[标题]` 文本，不含原始链接。
-合并转发消息只返回 `**多选转发begin****多选转发end**` 标记，内容完全丢失。
-
-## 新增文章流程
-
-1. 在企业微信群转发文章（单条转发，不要合并转发）
-2. 用 `wecom-cli msg get_message` 拉取新消息
-3. 根据标题用 `tvly search 'site:mp.weixin.qq.com "标题"' --include-domains mp.weixin.qq.com --max-results 3 --json` 搜索 URL
-4. 添加到对应分类索引和总索引
-
-## 后续演进方向
-
-- 抓取文章全文并存储本地副本
-- AI 自动生成摘要和关键要点
-- 文章间关联关系（知识图谱）
-- VitePress 站点生成（团队分享）
-- 定期从企微群拉取新文章（自动化流水线）
+- `docs/PRD.md` — 产品需求文档
+- `docs/architecture.md` — 原始技术方案（已收缩）
+- `docs/superpowers/specs/2026-05-21-knowledge-map-mvp-design.md` — MVP 设计 spec（权威）

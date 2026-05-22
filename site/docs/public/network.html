@@ -1,0 +1,32 @@
+
+<!doctype html>
+<html><head><meta charset="utf-8"><title>领域网络</title>
+<style>body{margin:0;font-family:system-ui}svg{width:100vw;height:100vh}
+.node circle{stroke:#fff;stroke-width:1.5px;cursor:pointer}
+.node text{font-size:12px;pointer-events:none}
+.bridge circle{stroke:#e63946;stroke-width:3px}
+.link{stroke:#999;stroke-opacity:.5}</style></head>
+<body><svg></svg>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+const data = {"nodes": [{"cluster_id": 0, "name": "AI编码与智能体协同", "size": 3}, {"cluster_id": 1, "name": "Agent与AI编程实践", "size": 35}, {"cluster_id": 2, "name": "LLM智能体知识架构设计", "size": 3}, {"cluster_id": 3, "name": "AI编程记忆规则优化", "size": 3}, {"cluster_id": 4, "name": "AI编码与工程实践", "size": 9}], "edges": [{"source": 0, "target": 1, "weight": 9.6014}, {"source": 0, "target": 2, "weight": 5.0618}, {"source": 0, "target": 3, "weight": 4.8022}, {"source": 0, "target": 4, "weight": 8.4576}, {"source": 1, "target": 2, "weight": 61.6221}, {"source": 1, "target": 3, "weight": 62.4695}, {"source": 1, "target": 4, "weight": 106.0604}, {"source": 2, "target": 3, "weight": 5.3248}, {"source": 2, "target": 4, "weight": 8.5867}, {"source": 3, "target": 4, "weight": 9.1753}], "bridges": [{"cluster_id": 0, "betweenness": 0.5}, {"cluster_id": 1, "betweenness": 0.0}, {"cluster_id": 2, "betweenness": 0.0}]};
+const bridgeIds = new Set(data.bridges.map(b => b.cluster_id));
+const svg = d3.select("svg"), w = innerWidth, h = innerHeight;
+const sim = d3.forceSimulation(data.nodes)
+  .force("link", d3.forceLink(data.edges).id(d => d.cluster_id).distance(120))
+  .force("charge", d3.forceManyBody().strength(-300))
+  .force("center", d3.forceCenter(w/2, h/2));
+const link = svg.append("g").attr("class","links").selectAll("line")
+  .data(data.edges).enter().append("line").attr("class","link")
+  .attr("stroke-width", d => Math.max(1, Math.sqrt(d.weight)));
+const node = svg.append("g").selectAll("g").data(data.nodes).enter()
+  .append("g").attr("class", d => "node" + (bridgeIds.has(d.cluster_id) ? " bridge" : ""))
+  .on("click", (_, d) => location.href = `/domains/${d.cluster_id}`);
+node.append("circle").attr("r", d => 6 + d.size).attr("fill", "#1f77b4");
+node.append("text").attr("dx", 12).attr("dy", "0.35em").text(d => d.name);
+sim.on("tick", () => {
+  link.attr("x1", d => d.source.x).attr("y1", d => d.source.y)
+      .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
+  node.attr("transform", d => `translate(${d.x},${d.y})`);
+});
+</script></body></html>

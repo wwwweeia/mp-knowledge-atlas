@@ -69,12 +69,12 @@ def render_site(
         ),
         encoding="utf-8",
     )
-    (site_dir / "network.html").write_text(
-        env.get_template("network.html.j2").render(
-            data_json=json.dumps(network, ensure_ascii=False)
-        ),
-        encoding="utf-8",
+    network_html = env.get_template("network.html.j2").render(
+        data_json=json.dumps(network, ensure_ascii=False)
     )
+    (site_dir / "network.html").write_text(network_html, encoding="utf-8")
+    (site_dir / "public").mkdir(parents=True, exist_ok=True)
+    (site_dir / "public" / "network.html").write_text(network_html, encoding="utf-8")
     for c in named["clusters"]:
         page = env.get_template("domain.md.j2").render(
             cluster=c,

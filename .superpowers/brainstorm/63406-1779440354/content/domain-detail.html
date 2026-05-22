@@ -1,0 +1,157 @@
+<h2>领域详情页</h2>
+<p class="subtitle">点击某个领域后进入的详情视图</p>
+
+<div class="mockup">
+  <div class="mockup-header">Preview: Domain Detail Page</div>
+  <div class="mockup-body" style="background: #0a0a0b; padding: 0; overflow: hidden;">
+    <!-- Top Nav -->
+    <div style="background: #111213; border-bottom: 1px solid #1f2023; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between;">
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <span style="color: #5e6ad2; font-size: 16px; font-weight: 700;">◎ 知识地图</span>
+        <span style="color: #6b6e76; font-size: 12px;">← 返回首页</span>
+      </div>
+      <div style="background: #1a1b1e; border: 1px solid #2a2b2d; border-radius: 6px; padding: 6px 12px; color: #6b6e76; font-size: 12px; display: flex; align-items: center; gap: 6px;">
+        <span>⌘</span> <span>搜索文章...</span>
+      </div>
+    </div>
+
+    <!-- Domain Header -->
+    <div style="padding: 24px 24px 0; border-bottom: 1px solid #1f2023; padding-bottom: 16px;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+            <span style="color: #5e6ad2; font-size: 10px; background: rgba(94,106,210,0.15); padding: 2px 8px; border-radius: 3px; border: 1px solid rgba(94,106,210,0.3);">桥梁领域</span>
+            <span style="color: #6b6e76; font-size: 11px;">betweenness: 0.9779</span>
+          </div>
+          <div style="color: #e8e8ed; font-size: 22px; font-weight: 700; margin-bottom: 6px;">AI Agent 架构与实践</div>
+          <div style="color: #6b6e76; font-size: 13px; max-width: 600px; line-height: 1.5;">探讨AI智能体在研发、数据治理、运维等领域的架构设计与落地实践</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="color: #5e6ad2; font-size: 32px; font-weight: 700;">30</div>
+          <div style="color: #6b6e76; font-size: 12px;">篇文章</div>
+        </div>
+      </div>
+
+      <!-- Keywords -->
+      <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; padding-bottom: 12px;">
+        <span style="color: #9b9da5; font-size: 11px; background: #1a1b1e; border: 1px solid #2a2b2d; padding: 3px 10px; border-radius: 12px;">AI Agent</span>
+        <span style="color: #9b9da5; font-size: 11px; background: #1a1b1e; border: 1px solid #2a2b2d; padding: 3px 10px; border-radius: 12px;">SDD</span>
+        <span style="color: #9b9da5; font-size: 11px; background: #1a1b1e; border: 1px solid #2a2b2d; padding: 3px 10px; border-radius: 12px;">Harness</span>
+        <span style="color: #9b9da5; font-size: 11px; background: #1a1b1e; border: 1px solid #2a2b2d; padding: 3px 10px; border-radius: 12px;">上下文管理</span>
+        <span style="color: #9b9da5; font-size: 11px; background: #1a1b1e; border: 1px solid #2a2b2d; padding: 3px 10px; border-radius: 12px;">工具链</span>
+        <span style="color: #9b9da5; font-size: 11px; background: #1a1b1e; border: 1px solid #2a2b2d; padding: 3px 10px; border-radius: 12px;">AI 研发</span>
+        <span style="color: #9b9da5; font-size: 11px; background: #1a1b1e; border: 1px solid #2a2b2d; padding: 3px 10px; border-radius: 12px;">A/B测试</span>
+      </div>
+    </div>
+
+    <!-- Main Content: Articles + Related Domains -->
+    <div style="padding: 16px 24px; display: flex; gap: 16px;">
+      <!-- Articles List -->
+      <div style="flex: 2;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <span style="color: #e8e8ed; font-size: 13px; font-weight: 600;">全部文章</span>
+          <div style="display: flex; gap: 8px;">
+            <span style="color: #5e6ad2; font-size: 11px; background: rgba(94,106,210,0.1); padding: 3px 10px; border-radius: 4px; border: 1px solid rgba(94,106,210,0.3);">按日期</span>
+            <span style="color: #6b6e76; font-size: 11px; background: #1a1b1e; padding: 3px 10px; border-radius: 4px; border: 1px solid #2a2b2d;">按来源</span>
+          </div>
+        </div>
+
+        <!-- Article Cards -->
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div style="background: #131416; border: 1px solid #1f2023; border-radius: 8px; padding: 14px 16px; cursor: pointer;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <div style="flex: 1;">
+                <div style="color: #e8e8ed; font-size: 14px; font-weight: 500; line-height: 1.4;">告别"氛围编程"：基于 Harness 治理和 SDD 的团队级 AI 研发范式演进与实践</div>
+                <div style="color: #6b6e76; font-size: 12px; margin-top: 6px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">从"氛围编程"到结构化 AI 研发范式的演进路径，结合 Harness 平台治理能力和 SDD（软件定义开发）理念，实现团队级 AI 辅助研发的工程化落地。</div>
+              </div>
+              <div style="color: #5e6ad2; font-size: 16px; margin-left: 12px;">↗</div>
+            </div>
+            <div style="display: flex; gap: 12px; margin-top: 8px; color: #6b6e76; font-size: 11px;">
+              <span>得物技术</span>
+              <span>2026-05-22</span>
+            </div>
+          </div>
+
+          <div style="background: #131416; border: 1px solid #1f2023; border-radius: 8px; padding: 14px 16px; cursor: pointer;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <div style="flex: 1;">
+                <div style="color: #e8e8ed; font-size: 14px; font-weight: 500;">AI Agent 工程化实践：从原型到生产的完整路径</div>
+                <div style="color: #6b6e76; font-size: 12px; margin-top: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">探讨 AI Agent 从原型验证到生产部署的工程化最佳实践，包括上下文管理、工具链集成和监控运维。</div>
+              </div>
+              <div style="color: #5e6ad2; font-size: 16px; margin-left: 12px;">↗</div>
+            </div>
+            <div style="display: flex; gap: 12px; margin-top: 8px; color: #6b6e76; font-size: 11px;">
+              <span>美团技术团队</span>
+              <span>2026-05-20</span>
+            </div>
+          </div>
+
+          <div style="background: #131416; border: 1px solid #1f2023; border-radius: 8px; padding: 14px 16px; cursor: pointer;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <div style="flex: 1;">
+                <div style="color: #e8e8ed; font-size: 14px; font-weight: 500;">大模型上下文工程：让 AI Agent 更聪明的秘密</div>
+                <div style="color: #6b6e76; font-size: 12px; margin-top: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">深入分析大模型上下文窗口的工程化利用策略，包括 RAG 增强、长文本处理和多轮对话管理。</div>
+              </div>
+              <div style="color: #5e6ad2; font-size: 16px; margin-left: 12px;">↗</div>
+            </div>
+            <div style="display: flex; gap: 12px; margin-top: 8px; color: #6b6e76; font-size: 11px;">
+              <span>阿里云开发者</span>
+              <span>2026-05-19</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Related Domains Sidebar -->
+      <div style="flex: 1;">
+        <div style="color: #e8e8ed; font-size: 13px; font-weight: 600; margin-bottom: 12px;">关联领域</div>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div style="background: #131416; border: 1px solid #1f2023; border-radius: 6px; padding: 12px; cursor: pointer;">
+            <div style="color: #e8e8ed; font-size: 13px; font-weight: 500;">Harness 工程智能体编程</div>
+            <div style="display: flex; justify-content: space-between; margin-top: 6px;">
+              <span style="color: #6b6e76; font-size: 11px;">77 篇文章</span>
+              <span style="color: #5e6ad2; font-size: 11px;">相似度 0.92</span>
+            </div>
+            <!-- Similarity bar -->
+            <div style="background: #1a1b1e; border-radius: 2px; height: 3px; margin-top: 6px;">
+              <div style="background: #5e6ad2; border-radius: 2px; height: 3px; width: 92%;"></div>
+            </div>
+          </div>
+
+          <div style="background: #131416; border: 1px solid #1f2023; border-radius: 6px; padding: 12px; cursor: pointer;">
+            <div style="color: #e8e8ed; font-size: 13px; font-weight: 500;">大模型训练与推理优化</div>
+            <div style="display: flex; justify-content: space-between; margin-top: 6px;">
+              <span style="color: #6b6e76; font-size: 11px;">18 篇文章</span>
+              <span style="color: #5e6ad2; font-size: 11px;">相似度 0.78</span>
+            </div>
+            <div style="background: #1a1b1e; border-radius: 2px; height: 3px; margin-top: 6px;">
+              <div style="background: #5e6ad2; border-radius: 2px; height: 3px; width: 78%;"></div>
+            </div>
+          </div>
+
+          <div style="background: #131416; border: 1px solid #1f2023; border-radius: 6px; padding: 12px; cursor: pointer;">
+            <div style="color: #e8e8ed; font-size: 13px; font-weight: 500;">AI 编程赛事与奖金活动</div>
+            <div style="display: flex; justify-content: space-between; margin-top: 6px;">
+              <span style="color: #6b6e76; font-size: 11px;">12 篇文章</span>
+              <span style="color: #5e6ad2; font-size: 11px;">相似度 0.65</span>
+            </div>
+            <div style="background: #1a1b1e; border-radius: 2px; height: 3px; margin-top: 6px;">
+              <div style="background: #5e6ad2; border-radius: 2px; height: 3px; width: 65%;"></div>
+            </div>
+          </div>
+
+          <div style="background: #131416; border: 1px solid #1f2023; border-radius: 6px; padding: 12px; cursor: pointer;">
+            <div style="color: #e8e8ed; font-size: 13px; font-weight: 500;">AI Agent 上下文与工程实践</div>
+            <div style="display: flex; justify-content: space-between; margin-top: 6px;">
+              <span style="color: #6b6e76; font-size: 11px;">22 篇文章</span>
+              <span style="color: #5e6ad2; font-size: 11px;">相似度 0.58</span>
+            </div>
+            <div style="background: #1a1b1e; border-radius: 2px; height: 3px; margin-top: 6px;">
+              <div style="background: #5e6ad2; border-radius: 2px; height: 3px; width: 58%;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

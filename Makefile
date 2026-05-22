@@ -21,10 +21,10 @@ refresh:
 rebuild: clean refresh
 
 build:
-	cd site && pnpm install && pnpm build
+	rm -rf out/site && cp -r site out/site
 
 serve:
-	cd site && pnpm dev
+	python3 -m http.server 5173 --directory site
 
 all: refresh build
 
@@ -32,4 +32,4 @@ test:
 	uv run pytest
 
 clean:
-	rm -rf out data/articles.db data/chroma site/.vitepress/dist site/.vitepress/cache
+	rm -rf out data/articles.db data/chroma

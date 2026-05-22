@@ -16,9 +16,9 @@ def _fetch_wemp_articles(wemp_path: Path) -> list[dict]:
         c.row_factory = sqlite3.Row
         rows = c.execute(
             "SELECT a.id, a.title, a.url, a.content, a.publish_time, "
-            "a.feed_id, f.name AS feed_name "
+            "a.mp_id, f.mp_name AS feed_name "
             "FROM articles a "
-            "JOIN feeds f ON a.feed_id = f.id "
+            "JOIN feeds f ON a.mp_id = f.id "
             "WHERE a.status = 1"
         ).fetchall()
 
@@ -34,7 +34,7 @@ def _fetch_wemp_articles(wemp_path: Path) -> list[dict]:
                 pass
         articles.append({
             "source_id": r["id"],
-            "feed_id": r["feed_id"],
+            "feed_id": r["mp_id"],
             "feed_name": r["feed_name"],
             "title": r["title"],
             "url": r["url"],

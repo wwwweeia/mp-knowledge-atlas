@@ -15,11 +15,11 @@ def wemp_db(tmp_path):
         c.executescript("""
             CREATE TABLE feeds (
                 id TEXT PRIMARY KEY,
-                name TEXT NOT NULL
+                mp_name TEXT NOT NULL
             );
             CREATE TABLE articles (
                 id TEXT PRIMARY KEY,
-                feed_id TEXT NOT NULL,
+                mp_id TEXT NOT NULL,
                 title TEXT NOT NULL,
                 url TEXT,
                 content TEXT,

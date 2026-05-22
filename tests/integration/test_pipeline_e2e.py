@@ -15,9 +15,9 @@ def wemp_db(tmp_path):
     db = tmp_path / "wemp.db"
     with sqlite3.connect(db) as c:
         c.executescript("""
-            CREATE TABLE feeds (id TEXT PRIMARY KEY, name TEXT);
+            CREATE TABLE feeds (id TEXT PRIMARY KEY, mp_name TEXT);
             CREATE TABLE articles (
-                id TEXT PRIMARY KEY, feed_id TEXT, title TEXT,
+                id TEXT PRIMARY KEY, mp_id TEXT, title TEXT,
                 url TEXT, content TEXT, publish_time INTEGER, status INTEGER
             );
         """)

@@ -2,7 +2,7 @@
 
 ## 项目说明
 
-技术文章知识地图：从微信公众号自动采集文章，通过全文清洗 + LLM 摘要 + embedding + 聚类 + 网络分析生成领域知识地图，发布为 VitePress 静态站。
+技术文章知识地图：从微信公众号自动采集文章，通过全文清洗 + LLM 摘要 + embedding + 聚类 + 网络分析生成领域知识地图，发布为 Vue 3 SPA 静态站。
 
 ## 数据源
 
@@ -58,7 +58,7 @@ We-MP-RSS SQLite
    └────┬────┘
         ▼
    ┌─────────┐
-   │ publish │ 渲染 VitePress Markdown + D3.js 网络图
+   │ publish │ 聚合数据生成 data.json，供 Vue 3 SPA 前端消费
    └─────────┘
 ```
 
@@ -73,7 +73,7 @@ We-MP-RSS SQLite
 ```bash
 make refresh   # 增量刷新：导入新文章 + 回填全文 → 清洗 → 摘要 → 嵌入 → 聚类 → 网络 → 发布
 make rebuild   # 全量重跑：清空所有数据 + refresh（耗时较长，首次或调试用）
-make build     # VitePress 构建
+make build     # 复制 site/ 到 out/site/（纯静态，无需构建）
 make all       # refresh + build
 make serve     # 本地预览（http://localhost:5173）
 make test      # pytest
@@ -108,7 +108,7 @@ src/
 ├── embed.py         # 标题+摘要 → 向量嵌入
 ├── cluster.py       # HDBSCAN/K-means 聚类 + LLM 命名
 ├── network.py       # betweenness 桥梁分析
-├── publish.py       # 渲染 VitePress markdown + 网络图
+├── publish.py       # 聚合数据 → data.json
 └── lib/
     ├── db.py        # SQLite 数据层（schema + CRUD）
     ├── html.py      # HTML 清洗工具（BeautifulSoup）
@@ -116,11 +116,18 @@ src/
     ├── embedding.py  # Ollama 嵌入调用
     └── vec.py       # ChromaDB 操作
 
-site/                # VitePress 站点（publish.py 写入 site/docs）
+site/                # Vue 3 SPA 前端（CDN 引入，无构建步骤）
+├── index.html       # SPA 入口
+├── assets/
+│   ├── app.js       # Vue 3 路由 + 组件
+│   ├── app.css      # Linear 暗色主题
+│   └── network-graph.js  # D3.js 网络图
+└── data/
+    └── data.json    # publish.py 生成的聚合数据
+
 out/                 # pipeline 中间产物（clusters_named.json, network.json）
 data/                # articles.db + chroma/（gitignore）
 articles/            # 历史手工索引（只读）
-templates/           # Jinja2 模板（article/domain/index/network）
 ```
 
 ## 设计文档

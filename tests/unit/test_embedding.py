@@ -1,47 +1,70 @@
-"""Tests for src.lib.embedding — Ollama embedding client with retry."""
+"""Tests for src.embed — embedding pipeline stage."""
 
-from unittest.mock import MagicMock, patch
+from pathlib import Path
+from unittest.mock import patch
 
-import httpx
 import pytest
 
-from src.lib.embedding import embed_texts
+from src.embed import _text_for, run_embed
+from src.lib.db import (
+    fetch_by_stage,
+    init_db,
+    mark_embedded,
+    update_stage,
+    upsert_articles,
+)
 
 
-@pytest.mark.unit
-def test_embed_texts_returns_vectors():
-    """embed_texts should return the embeddings list from ollama response."""
-    mock_resp = MagicMock()
-    mock_resp.embeddings = [[0.1, 0.2], [0.3, 0.4]]
+@pytest.fixture
+def db_with_summarized(tmp_path):
+    p = tmp_path / "test.db"
+    init_db(p)
+    articles = [
+        {
+            "source_id": "mp-001",
+            "feed_id": "f1",
+            "feed_name": "测试",
+            "title": "AI技术文章",
+            "url": None,
+            "raw_html": None,
+            "published_at": None,
+            "has_fulltext": 0,
+        },
+    ]
+    upsert_articles(p, articles)
+    a = fetch_by_stage(p, "ingested")[0]
+    update_stage(
+        p,
+        a["id"],
+        "summarized",
+        summary="关于AI的技术摘要",
+        keywords='["AI"]',
+    )
+    return p
 
-    with patch("src.lib.embedding.ollama.embed", return_value=mock_resp):
-        vecs = embed_texts(["a", "b"])
 
-    assert vecs == [[0.1, 0.2], [0.3, 0.4]]
-
-
-@pytest.mark.unit
-def test_embed_texts_retries_on_connection_error():
-    """embed_texts should retry on httpx.ConnectError and eventually succeed."""
-    mock_resp = MagicMock()
-    mock_resp.embeddings = [[1.0]]
-
-    with patch(
-        "src.lib.embedding.ollama.embed",
-        side_effect=[httpx.ConnectError("refused"), mock_resp],
-    ):
-        vecs = embed_texts(["x"])
-
-    assert vecs == [[1.0]]
+def test_text_for_combines_title_and_summary():
+    row = {"title": "AI技术", "summary": "这是摘要"}
+    result = _text_for(row)
+    assert "AI技术" in result
+    assert "这是摘要" in result
 
 
-@pytest.mark.unit
-def test_embed_texts_reraises_after_max_retries():
-    """embed_texts should re-raise ConnectError after exhausting retries."""
-    error = httpx.ConnectError("connection refused")
+def test_text_for_title_only():
+    row = {"title": "只有标题", "summary": None}
+    result = _text_for(row)
+    assert result == "只有标题"
 
-    with patch(
-        "src.lib.embedding.ollama.embed",
-        side_effect=error,
-    ), pytest.raises(httpx.ConnectError, match="connection refused"):
-        embed_texts(["x"])
+
+def test_text_for_skips_duplicate_summary():
+    row = {"title": "相同内容", "summary": "相同内容"}
+    result = _text_for(row)
+    assert result == "相同内容"
+
+
+def test_run_embed_processes_summarized(db_with_summarized, tmp_path):
+    chroma = tmp_path / "chroma"
+    fake_vecs = [[0.1] * 128]
+    with patch("src.embed.embed_texts", return_value=fake_vecs):
+        count = run_embed(db=db_with_summarized, chroma_path=chroma)
+    assert count == 1

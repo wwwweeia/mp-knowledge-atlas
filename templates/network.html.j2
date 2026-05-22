@@ -1,0 +1,32 @@
+{# templates/network.html.j2 #}
+<!doctype html>
+<html><head><meta charset="utf-8"><title>领域网络</title>
+<style>body{margin:0;font-family:system-ui}svg{width:100vw;height:100vh}
+.node circle{stroke:#fff;stroke-width:1.5px;cursor:pointer}
+.node text{font-size:12px;pointer-events:none}
+.bridge circle{stroke:#e63946;stroke-width:3px}
+.link{stroke:#999;stroke-opacity:.5}</style></head>
+<body><svg></svg>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+const data = {{ data_json | safe }};
+const bridgeIds = new Set(data.bridges.map(b => b.cluster_id));
+const svg = d3.select("svg"), w = innerWidth, h = innerHeight;
+const sim = d3.forceSimulation(data.nodes)
+  .force("link", d3.forceLink(data.edges).id(d => d.cluster_id).distance(120))
+  .force("charge", d3.forceManyBody().strength(-300))
+  .force("center", d3.forceCenter(w/2, h/2));
+const link = svg.append("g").attr("class","links").selectAll("line")
+  .data(data.edges).enter().append("line").attr("class","link")
+  .attr("stroke-width", d => Math.max(1, Math.sqrt(d.weight)));
+const node = svg.append("g").selectAll("g").data(data.nodes).enter()
+  .append("g").attr("class", d => "node" + (bridgeIds.has(d.cluster_id) ? " bridge" : ""))
+  .on("click", (_, d) => location.href = `/domains/${d.cluster_id}`);
+node.append("circle").attr("r", d => 6 + d.size).attr("fill", "#1f77b4");
+node.append("text").attr("dx", 12).attr("dy", "0.35em").text(d => d.name);
+sim.on("tick", () => {
+  link.attr("x1", d => d.source.x).attr("y1", d => d.source.y)
+      .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
+  node.attr("transform", d => `translate(${d.x},${d.y})`);
+});
+</script></body></html>

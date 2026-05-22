@@ -1,0 +1,13 @@
+{# templates/article.md.j2 #}
+# {{ article.title }}
+
+{% if article.url %}[阅读原文]({{ article.url }}){% else %}_未找到原文链接_{% endif %}
+
+- **来源**：{{ article.source or "未知" }}
+- **原分类**：{{ article.manual_tag or "无" }}
+- **所属领域**：[{{ cluster.name }}](/domains/{{ cluster.cluster_id }})
+- **收藏时间**：{{ article.added_at }}
+
+{% if article.summary %}## 摘要
+
+{{ article.summary }}{% endif %}

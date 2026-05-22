@@ -1,0 +1,16 @@
+{# templates/index.md.j2 #}
+# 技术文章知识地图
+
+<iframe src="/network.html" width="100%" height="600" frameborder="0"></iframe>
+
+## Top 桥梁领域
+
+{% for b in bridges %}
+- **[{{ b.name }}](/domains/{{ b.cluster_id }})** — betweenness {{ "%.4f" % b.betweenness }}
+{% endfor %}
+
+## 所有领域
+
+{% for c in clusters %}
+- [{{ c.name }}](/domains/{{ c.cluster_id }}) — {{ c.article_ids|length }} 篇 — {{ c.description }}
+{% endfor %}

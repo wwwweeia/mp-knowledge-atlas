@@ -1,0 +1,18 @@
+{# templates/domain.md.j2 #}
+# {{ cluster.name }}
+
+> {{ cluster.description }}{% if cluster.fallback %} _(TF-IDF 兜底命名)_{% endif %}
+
+**文章数**：{{ cluster.article_ids|length }}
+
+## 文章列表
+
+{% for a in articles %}
+- [{{ a.title }}]({% if a.url %}{{ a.url }}{% else %}/articles/{{ a.id }}{% endif %}){% if a.manual_tag %} _[原分类: {{ a.manual_tag }}]_{% endif %}
+{% endfor %}
+
+## 关联领域
+
+{% for r in related %}
+- [{{ r.name }}](/domains/{{ r.cluster_id }}) — 相似度 {{ "%.2f" % r.weight }}
+{% endfor %}

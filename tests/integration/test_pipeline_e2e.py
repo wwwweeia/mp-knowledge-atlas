@@ -62,8 +62,9 @@ def test_full_pipeline(wemp_db, paths):
         from src.publish import render_site
 
         # Stage 1: ingest
-        n = run_ingest(wemp=wemp_db, db=paths["db"])
-        assert n == 20
+        new, backfill = run_ingest(wemp=wemp_db, db=paths["db"])
+        assert new == 20
+        assert backfill == 0
 
         # Stage 2: clean (all articles have HTML content)
         n = run_clean(db=paths["db"])

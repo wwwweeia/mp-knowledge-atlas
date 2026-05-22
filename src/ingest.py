@@ -7,7 +7,7 @@ import sqlite3
 from datetime import datetime
 from pathlib import Path
 
-from src.lib.db import init_db, upsert_articles
+from src.lib.db import backfill_fulltext, init_db, upsert_articles
 
 
 def _fetch_wemp_articles(wemp_path: Path) -> list[dict]:
@@ -45,11 +45,13 @@ def _fetch_wemp_articles(wemp_path: Path) -> list[dict]:
     return articles
 
 
-def run_ingest(*, wemp: Path, db: Path) -> int:
-    """Import new articles from We-MP-RSS. Returns count of newly inserted."""
+def run_ingest(*, wemp: Path, db: Path) -> tuple[int, int]:
+    """Import new articles + backfill fulltext. Returns (new_count, backfill_count)."""
     init_db(db)
     articles = _fetch_wemp_articles(wemp)
-    return upsert_articles(db, articles)
+    new_count = upsert_articles(db, articles)
+    backfill_count = backfill_fulltext(db, articles)
+    return new_count, backfill_count
 
 
 def main() -> None:
@@ -64,8 +66,8 @@ def main() -> None:
         "--db", default=os.environ.get("DB_PATH", "data/articles.db")
     )
     a = ap.parse_args()
-    n = run_ingest(wemp=Path(a.wemp), db=Path(a.db))
-    print(f"ingested={n}")
+    new, backfill = run_ingest(wemp=Path(a.wemp), db=Path(a.db))
+    print(f"ingested={new} backfilled={backfill}")
 
 
 if __name__ == "__main__":

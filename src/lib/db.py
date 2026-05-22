@@ -125,3 +125,29 @@ def fetch_all_articles(path: Path) -> list[dict]:
     with get_conn(path) as c:
         rows = c.execute("SELECT * FROM articles").fetchall()
     return [dict(r) for r in rows]
+
+
+def backfill_fulltext(path: Path, wemp_articles: list[dict]) -> int:
+    """Detect articles that now have fulltext (from We-MP-RSS), update and reset stage.
+    Returns count of articles reset for re-processing."""
+    if not wemp_articles:
+        return 0
+    wemp_by_id = {a["source_id"]: a for a in wemp_articles}
+    reset = 0
+    with get_conn(path) as c:
+        rows = c.execute(
+            "SELECT id, source_id, has_fulltext FROM articles WHERE has_fulltext = 0"
+        ).fetchall()
+        for r in rows:
+            wemp = wemp_by_id.get(r["source_id"])
+            if not wemp or not wemp.get("has_fulltext"):
+                continue
+            c.execute(
+                "UPDATE articles SET has_fulltext = 1, raw_html = ?, "
+                "pipeline_stage = 'ingested', clean_text = NULL, "
+                "summary = NULL, keywords = NULL, embedding_id = NULL, "
+                "updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                (wemp.get("raw_html"), r["id"]),
+            )
+            reset += 1
+    return reset

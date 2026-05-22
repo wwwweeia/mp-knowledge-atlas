@@ -29,17 +29,22 @@ def get_conn(path: Path):
     try:
         yield c
         c.commit()
+    except Exception:
+        c.rollback()
+        raise
     finally:
         c.close()
 
-def insert_article(conn, *, title, url, source, source_name, manual_tag, summary):
+def insert_article(conn: sqlite3.Connection, *, title: str, url: str | None,
+                   source: str | None, source_name: str | None,
+                   manual_tag: str | None, summary: str | None) -> None:
     conn.execute(
         "INSERT INTO articles (title, url, source, source_name, manual_tag, summary) "
         "VALUES (?, ?, ?, ?, ?, ?)",
         (title, url, source, source_name, manual_tag, summary),
     )
 
-def fetch_pending_embeddings(path: Path):
+def fetch_pending_embeddings(path: Path) -> list[dict]:
     with get_conn(path) as c:
         rows = c.execute(
             "SELECT id, title, summary FROM articles "
@@ -52,7 +57,7 @@ def mark_embedded(path: Path, article_id: int, embedding_id: str) -> None:
         c.execute("UPDATE articles SET embedding_id=? WHERE id=?",
                   (embedding_id, article_id))
 
-def fetch_all_articles(path: Path):
+def fetch_all_articles(path: Path) -> list[dict]:
     with get_conn(path) as c:
         rows = c.execute("SELECT * FROM articles").fetchall()
     return [dict(r) for r in rows]

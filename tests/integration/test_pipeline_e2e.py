@@ -59,7 +59,7 @@ def test_full_pipeline(wemp_db, paths):
         from src.embed import run_embed
         from src.cluster import run_cluster
         from src.network import run_network
-        from src.publish import render_site
+        from src.publish import generate_data_json
 
         # Stage 1: ingest
         new, backfill = run_ingest(wemp=wemp_db, db=paths["db"])
@@ -94,9 +94,14 @@ def test_full_pipeline(wemp_db, paths):
         assert "edges" in net
 
         # Stage 7: publish
-        render_site(
+        data_json_path = paths["out"] / "data.json"
+        generate_data_json(
             named_path=out_path, network_path=net_path, db=paths["db"],
-            templates_dir="templates", site_dir=paths["site"],
+            output_path=data_json_path,
         )
-        assert (paths["site"] / "index.md").exists()
-        assert (paths["site"] / "network.html").exists()
+        assert data_json_path.exists()
+        data = json.loads(data_json_path.read_text())
+        assert "stats" in data
+        assert "domains" in data
+        assert "network" in data
+        assert data["stats"]["total_articles"] == 20

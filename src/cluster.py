@@ -80,7 +80,7 @@ def run_cluster(
         cluster_keywords: set[str] = set()
         for m in article_metas:
             aid = m.get("article_id", "")
-            art = articles_map.get(aid, {})
+            art = articles_map.get(str(aid), articles_map.get(aid, {}))
             kws = art.get("keywords", "[]")
             try:
                 cluster_keywords.update(json.loads(kws))
@@ -100,9 +100,10 @@ def run_cluster(
         top_articles = []
         for i in indices[:3]:
             aid = metas[i].get("article_id", "")
-            art = articles_map.get(aid, {})
+            aid_str = str(aid)
+            art = articles_map.get(aid_str, articles_map.get(aid, {}))
             top_articles.append({
-                "id": int(aid) if aid.isdigit() else aid,
+                "id": int(aid) if isinstance(aid, int) or str(aid).isdigit() else aid,
                 "title": metas[i]["title"],
                 "summary": art.get("summary", ""),
             })
@@ -113,7 +114,8 @@ def run_cluster(
             "description": desc,
             "keywords": sorted(cluster_keywords)[:10],
             "article_ids": [
-                int(m["article_id"]) if m["article_id"].isdigit()
+                int(m["article_id"]) if isinstance(m["article_id"], int)
+                or str(m["article_id"]).isdigit()
                 else m["article_id"]
                 for m in article_metas
             ],

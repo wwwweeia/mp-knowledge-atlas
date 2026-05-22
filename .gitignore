@@ -1,1 +1,12 @@
 .DS_Store
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+data/
+out/
+site/node_modules/
+site/.vitepress/cache/
+site/.vitepress/dist/
+.env

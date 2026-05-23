@@ -2,14 +2,21 @@
 // Cytoscape.js knowledge graph — enhanced visual & interaction
 
 (function () {
+  // suppress the wheelSensitivity console warning — 0.3x is intentional for smoother zoom
+  var _origWarn = console.warn;
+  console.warn = function () {
+    if (arguments[0] && String(arguments[0]).indexOf('wheel sensitivity') !== -1) return;
+    _origWarn.apply(console, arguments);
+  };
+
   // ---------------------------------------------------------------------------
   // Constants
   // ---------------------------------------------------------------------------
 
-  var DIM_MIN = 28;
-  var DIM_MAX = 64;
-  var W_MIN = 10;
-  var W_MAX = 14;
+  var DIM_MIN = 36;
+  var DIM_MAX = 58;
+  var W_MIN = 0;
+  var W_MAX = 200;
 
   // ---------------------------------------------------------------------------
   // SVG gradient backgrounds (precomputed data URIs)
@@ -52,7 +59,7 @@
       var dim = Math.round(DIM_MIN + t * (DIM_MAX - DIM_MIN));
       var tier = n.is_bridge ? 'bridge'
         : (n.size >= 20 ? 'large' : (n.size >= 10 ? 'medium' : 'small'));
-      var fontSize = dim >= 50 ? 16 : (dim >= 36 ? 13 : 10);
+      var fontSize = (dim >= 50 ? 16 : (dim >= 36 ? 13 : 10)) + 'px';
       var nameSize = n.is_bridge ? 12 : (n.size >= 15 ? 11 : 10);
       var nameColor = n.is_bridge ? '#e8e8ed'
         : (n.size >= 15 ? '#9b9da5' : '#6b6e76');
@@ -120,7 +127,7 @@
         'text-valign': 'center',
         'text-halign': 'center',
         color: '#ffffff',
-        'font-size': 'data(fontSize)px',
+        'font-size': 'data(fontSize)',
         'font-weight': 700,
         'text-outline-color': 'transparent',
         'text-outline-width': 0,
@@ -181,33 +188,36 @@
     var presets = {
       concentric: {
         name: 'concentric',
-        concentric: function (n) { return n.data('is_bridge') ? 200 : n.data('size'); },
+        concentric: function (n) {
+          if (n.data('is_bridge')) return 40;
+          var s = n.data('size');
+          return s >= 60 ? 30 : (s >= 30 ? 20 : 10);
+        },
         levelWidth: function () { return 5; },
-        minNodeSpacing: 40,
-        padding: 50,
+        minNodeSpacing: 50,
+        padding: 60,
         startAngle: Math.PI / 6,
-        sweep: Math.PI * 2,
         animate: true,
         animationDuration: 800,
         fit: true
       },
-      'cose-bilkent': {
-        name: 'cose-bilkent',
+      cose: {
+        name: 'cose',
         animate: true,
         animationDuration: 800,
         fit: true,
-        nodeRepulsion: 100000,
+        nodeRepulsion: 400000,
         idealEdgeLength: 120,
-        gravity: 0.3,
-        padding: 50
+        gravity: 80,
+        padding: 60
       },
       circle: {
         name: 'circle',
-        padding: 50,
+        padding: 55,
         animate: true,
         animationDuration: 800,
         fit: true,
-        spacingFactor: 1.3
+        spacingFactor: 1.6
       }
     };
     return presets[name] || presets.concentric;
@@ -229,7 +239,7 @@
       container: container,
       elements: elements,
       style: graphStyle,
-      layout: getLayoutOpts('concentric'),
+      layout: Object.assign({}, getLayoutOpts('concentric'), { animate: false }),
       userPanningEnabled: interactive,
       userZoomingEnabled: interactive,
       boxSelectionEnabled: false,
@@ -250,12 +260,17 @@
         halignBox: 'center',
         cssClass: 'gn-label',
         tpl: function (d) {
+          // tiny nodes (≤4 articles) skip the persistent label — tooltip on hover still works
+          if (d.size < 5) return '';
           return '<div class="gn-label-inner" style="position:relative;width:0;height:0">' +
             '<div class="gn-name" data-nid="' + d.id + '" style="' +
             'position:absolute;' +
             'top:' + (d.dim / 2 + 4) + 'px;' +
             'left:50%;' +
             'transform:translateX(-50%);' +
+            'max-width:90px;' +
+            'overflow:hidden;' +
+            'text-overflow:ellipsis;' +
             'white-space:nowrap;' +
             'font-size:' + d.nameSize + 'px;' +
             'color:' + d.nameColor + '">' +
@@ -266,6 +281,7 @@
 
     cy.ready(function () {
       cy.fit(undefined, interactive ? 50 : 16);
+      if (cy.zoom() > 1.0) cy.zoom(1.0);
     });
 
     var currentLayout = 'concentric';
@@ -400,12 +416,20 @@
       switchLayout: function (name) {
         currentLayout = name;
         cy.nodes().unlock();
-        cy.layout(getLayoutOpts(name)).run();
+        var layout = cy.layout(getLayoutOpts(name));
+        layout.one('layoutstop', function () {
+          if (cy.zoom() > 1.0) { cy.zoom(1.0); cy.center(); }
+        });
+        layout.run();
       },
 
       resetLayout: function () {
         cy.nodes().unlock();
-        cy.layout(getLayoutOpts(currentLayout)).run();
+        var layout = cy.layout(getLayoutOpts(currentLayout));
+        layout.one('layoutstop', function () {
+          if (cy.zoom() > 1.0) { cy.zoom(1.0); cy.center(); }
+        });
+        layout.run();
       },
 
       destroy: function () { cy.destroy(); }

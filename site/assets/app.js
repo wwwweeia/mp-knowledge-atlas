@@ -2,7 +2,7 @@
 // Vue 3 SPA for Knowledge Map — Linear dark theme
 
 const { createApp, ref, computed, onMounted, watch, nextTick } = Vue;
-const { createRouter, createWebHistory } = VueRouter;
+const { createRouter, createWebHashHistory } = VueRouter;
 
 // ==========================================
 // Data Store
@@ -448,7 +448,7 @@ const GraphView = {
       <!-- Top-right: layout switcher -->
       <div class="graph-layouts">
         <button class="graph-layout-btn" :class="{ active: activeLayout === 'concentric' }" @click="onLayoutClick('concentric')">⊙ 同心圆</button>
-        <button class="graph-layout-btn" :class="{ active: activeLayout === 'cose-bilkent' }" @click="onLayoutClick('cose-bilkent')">∘ 力导向</button>
+        <button class="graph-layout-btn" :class="{ active: activeLayout === 'cose' }" @click="onLayoutClick('cose')">∘ 力导向</button>
         <button class="graph-layout-btn" :class="{ active: activeLayout === 'circle' }" @click="onLayoutClick('circle')">○ 环形</button>
       </div>
 
@@ -519,7 +519,7 @@ const routes = [
 ];
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHashHistory(),
   routes,
 });
 
